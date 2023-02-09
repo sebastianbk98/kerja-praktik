@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "946427230218",
+    "project_id": "rianinda-utama-ekspress",
+    "storage_bucket": "rianinda-utama-ekspress.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:946427230218:android:74f00d13ad99cf28ed87f3",
+        "android_client_info": {
+          "package_name": "com.example.rue_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "946427230218-i1an8jkapuvtg5f82jr6qvj7no8m94ab.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWsSVz1Zs6RwFuaKPnl7EJmDXozA6VZIA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "946427230218-i1an8jkapuvtg5f82jr6qvj7no8m94ab.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
