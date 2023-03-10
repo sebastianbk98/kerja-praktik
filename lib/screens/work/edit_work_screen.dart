@@ -1,20 +1,21 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
-
 import 'package:flutter/material.dart';
 import 'package:rue_app/config/const.dart';
 import 'package:rue_app/config/theme.dart';
+import 'package:rue_app/controllers/work_controller.dart';
 import 'package:rue_app/models/work_model.dart';
-import 'package:rue_app/screens/work/add_work_trucks_screen.dart';
+import 'package:rue_app/widget.dart';
 
-class AddWorkPage extends StatefulWidget {
-  const AddWorkPage({super.key});
+class EditWorkPage extends StatefulWidget {
+  const EditWorkPage({super.key, required this.work});
+  final Work work;
 
   @override
-  State<AddWorkPage> createState() => _AddWorkPageState();
+  State<EditWorkPage> createState() => _EditWorkPageState();
 }
 
-class _AddWorkPageState extends State<AddWorkPage> {
+class _EditWorkPageState extends State<EditWorkPage> {
   final TextEditingController _clientController = TextEditingController();
   final TextEditingController _numberDNController = TextEditingController();
   final TextEditingController _destinationController = TextEditingController();
@@ -22,6 +23,7 @@ class _AddWorkPageState extends State<AddWorkPage> {
       TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _shippingDateController = TextEditingController();
+  final TextEditingController _deliveryDateController = TextEditingController();
   final TextEditingController _transportationTypeController =
       TextEditingController();
   final TextEditingController _documentController = TextEditingController();
@@ -56,22 +58,32 @@ class _AddWorkPageState extends State<AddWorkPage> {
     });
   }
 
-  final DateTime _selectedDate = DateTime.now();
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-        context: context,
-        initialDate: _selectedDate,
-        firstDate: DateTime.now(),
-        lastDate: DateTime.now().add(const Duration(days: 365)));
-    if (picked != null) {
-      setState(() {
-        _shippingDateController.text = picked.toString().split(" ")[0];
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    Work work = widget.work;
+    _clientController.text = work.client;
+    _numberDNController.text = work.numberDN;
+    _destinationController.text = work.destination;
+    _receivingCompanyController.text = work.receivingCompany;
+    _weightController.text = work.weight;
+    _shippingDateController.text = work.shippingDate;
+    _deliveryDateController.text = work.deliveryDate;
+    _transportationTypeController.text = work.transportationType;
+    _documentController.text = work.documentReference;
+    final DateTime selectedDate = DateTime.now();
+    Future<void> selectDate(BuildContext context) async {
+      final DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: selectedDate,
+          firstDate: DateTime.parse(work.shippingDate),
+          lastDate: DateTime.now());
+      if (picked != null) {
+        setState(() {
+          _shippingDateController.text = picked.toString().split(" ")[0];
+        });
+      }
+    }
+
     return Title(
       color: Colors.blue,
       title: "Add New Work",
@@ -129,7 +141,7 @@ class _AddWorkPageState extends State<AddWorkPage> {
                               child: TextFormField(
                                 controller: _shippingDateController,
                                 readOnly: true,
-                                onTap: () => _selectDate(context),
+                                onTap: () => selectDate(context),
                                 decoration: InputDecoration(
                                   label: const Text("Shipping Date"),
                                   filled: true,
@@ -146,6 +158,34 @@ class _AddWorkPageState extends State<AddWorkPage> {
                                 },
                               ),
                             ),
+                            [workDone, workDoneConfirmation]
+                                    .contains(work.status)
+                                ? Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: TextFormField(
+                                      controller: _shippingDateController,
+                                      readOnly: true,
+                                      onTap: () => selectDate(context),
+                                      decoration: InputDecoration(
+                                        label: const Text("Delivery Date"),
+                                        filled: true,
+                                        hintText: 'Delivery Date',
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if ([workDone, workDoneConfirmation]
+                                                .contains(work.status) &&
+                                            (value == null || value.isEmpty)) {
+                                          return "Delivery Date is required";
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  )
+                                : Container(),
                             TextBoxWithValidation(
                               textController: _transportationTypeController,
                               label: 'Transportation Type',
@@ -177,37 +217,61 @@ class _AddWorkPageState extends State<AddWorkPage> {
                               child: ElevatedButton(
                                 onPressed: () {
                                   if (_formKey.currentState!.validate()) {
-                                    if (selectedFileInBytes == null) {}
-                                    Work work = Work(
-                                      id: '',
-                                      client: _clientController.text,
-                                      numberDN: _numberDNController.text,
-                                      destination: _destinationController.text,
-                                      receivingCompany:
-                                          _receivingCompanyController.text,
-                                      weight: _weightController.text,
-                                      shippingDate:
-                                          _shippingDateController.text,
-                                      transportationType:
-                                          _transportationTypeController.text,
-                                      employees: {},
-                                      trucks: {},
-                                      status: workRequestEmployee,
-                                      documentReference:
-                                          _documentController.text,
-                                      reportReference: [],
-                                    );
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => AddWorkTrucksPage(
-                                            work: work,
-                                            file: selectedFileInBytes),
-                                      ),
-                                    );
+                                    work.client = _clientController.text;
+                                    work.numberDN = _numberDNController.text;
+                                    work.destination =
+                                        _destinationController.text;
+                                    work.receivingCompany =
+                                        _receivingCompanyController.text;
+                                    work.weight = _weightController.text;
+                                    work.shippingDate =
+                                        _shippingDateController.text;
+                                    work.deliveryDate =
+                                        _deliveryDateController.text;
+                                    work.transportationType =
+                                        _transportationTypeController.text;
+                                    work.documentReference =
+                                        _documentController.text;
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: const Text("Confirm"),
+                                          content: const Text("Are you sure?"),
+                                          actions: [
+                                            ElevatedButton(
+                                              child: const Text("No"),
+                                              onPressed: () {
+                                                Navigator.pop(context, false);
+                                              },
+                                            ),
+                                            ElevatedButton(
+                                              child: const Text("Yes"),
+                                              onPressed: () {
+                                                Navigator.pop(context, true);
+                                              },
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ).then((value) {
+                                      if (value != null && value) {
+                                        editWork(
+                                                work: work,
+                                                file: selectedFileInBytes)
+                                            .then((value) {
+                                          if (value == "success") {
+                                            Navigator.pop(context);
+                                          } else {
+                                            showAlertDialog(context, "Error",
+                                                value.toString());
+                                          }
+                                        });
+                                      }
+                                    });
                                   }
                                 },
-                                child: const Text("Next"),
+                                child: const Text("Edit Work"),
                               ),
                             ),
                           ],
@@ -227,16 +291,19 @@ class TextBoxWithValidation extends StatelessWidget {
     Key? key,
     required this.textController,
     required this.label,
+    this.enable = true,
   }) : super(key: key);
 
   final TextEditingController textController;
   final String label;
+  final bool enable;
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: TextFormField(
         controller: textController,
+        enabled: enable,
         decoration: InputDecoration(
           label: Text(label),
           filled: true,

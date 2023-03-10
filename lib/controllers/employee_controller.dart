@@ -47,13 +47,16 @@ Future<Map<String, dynamic>> getLoggedInEmployee() async {
         );
     var docSnap = await ref.get();
     final userModel = docSnap.data();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('uid', userModel!.uid);
+    await prefs.setBool('isAdmin', userModel.position == "MANAGER");
+
     Map<String, dynamic> attendanceResult =
-        await checkTodayAttendanceByUid(userModel!.uid);
+        await checkTodayAttendanceByUid(userModel.uid);
+
     if (attendanceResult["message"] == "success") {
       userModel.checkInStatus = attendanceResult["object"];
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('uid', userModel.uid);
-      await prefs.setBool('isAdmin', userModel.position == "MANAGER");
+
       return {"message": "success", "object": userModel};
     } else {
       return {"message": attendanceResult["message"]};
@@ -65,7 +68,11 @@ Future<Map<String, dynamic>> getLoggedInEmployee() async {
 
 Future<Map<String, dynamic>> getAllEmployeesWithTodayAttendance() async {
   try {
-    final ref = db.collection("employees").withConverter(
+    final ref = db
+        .collection("employees")
+        .orderBy("position")
+        .orderBy("fullName")
+        .withConverter(
           fromFirestore: Employee.fromFirestore,
           toFirestore: (Employee userModel, _) => userModel.toFirestore(),
         );

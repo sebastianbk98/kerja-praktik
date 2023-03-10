@@ -9,6 +9,7 @@ import 'package:rue_app/firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -29,7 +30,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       darkTheme: FlexThemeData.dark(
-        scheme: FlexScheme.sakura,
+        scheme: FlexScheme.amber,
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,

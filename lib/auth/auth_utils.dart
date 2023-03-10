@@ -23,6 +23,10 @@ class AuthService {
       User? user = userCredential.user;
       String uid = user!.uid;
       await FirebaseAuth.instanceFor(app: app).signOut();
+      await db
+          .collection("userAuth")
+          .doc(uid)
+          .set({"email": email, "password": password});
       return {"message": "success", "object": uid};
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
@@ -55,7 +59,9 @@ class AuthService {
             toFirestore: (Employee employee, _) => employee.toFirestore(),
           )
           .get();
-      if (ref.exists) return 'success';
+      if (ref.exists) {
+        return 'success';
+      }
       logout();
       return "User got deleted and not exist anymore";
     } on FirebaseAuthException catch (e) {
@@ -99,6 +105,10 @@ class AuthService {
           );
           await user.reauthenticateWithCredential(cred);
           await user.updateEmail(email);
+          await db
+              .collection("userAuth")
+              .doc(uid)
+              .set({"email": email, "password": currentPassword});
         }
         if (isPasswordChanged) {
           var cred = EmailAuthProvider.credential(
@@ -107,6 +117,10 @@ class AuthService {
           );
           await user.reauthenticateWithCredential(cred);
           await user.updatePassword(newPassword);
+          await db
+              .collection("userAuth")
+              .doc(uid)
+              .set({"email": email, "password": newPassword});
         }
         db.collection("employees").doc(uid).update({
           "fullName": fullName,
@@ -133,12 +147,66 @@ class AuthService {
     }
   }
 
+  Future<String?> forgotPassword({
+    required String uid,
+    required String newPassword,
+  }) async {
+    try {
+      final userAuth = await db.collection("userAuth").doc(uid).get();
+      var data = userAuth.data();
+      login(email: data!["email"], password: data["password"]);
+      User? user = firebaseAuth.currentUser;
+      var cred = EmailAuthProvider.credential(
+        email: data["email"],
+        password: data["password"],
+      );
+      await user!.reauthenticateWithCredential(cred);
+      await user.updatePassword(newPassword);
+      await db
+          .collection("userAuth")
+          .doc(uid)
+          .set({"email": data["email"], "password": newPassword});
+      return 'success';
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
+        return 'The password provided is too weak.';
+      } else if (e.code == 'email-already-in-use') {
+        return 'The account already exists for that email.';
+      } else if (e.code == 'user-not-found') {
+        return 'No user found for that email.';
+      } else if (e.code == 'wrong-password') {
+        return 'Wrong password provided for that user.';
+      } else {
+        return e.message;
+      }
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
   Future<String> logout() async {
     try {
       await FirebaseAuth.instance.signOut();
       return "success";
     } on Exception catch (e) {
       return e.toString();
+    }
+  }
+
+  Future<Map<String, dynamic>> checkEmail(String email) async {
+    try {
+      final ref = await db
+          .collection("employees")
+          .where("email", isEqualTo: email)
+          .get();
+      var data = ref.docs.first;
+      if (data.exists) {
+        var user = data.data();
+        return {"message": "success", "object": user["uid"]};
+      }
+      return {"message": "Email not exist"};
+    } on Exception catch (e) {
+      return {"message": e.toString()};
     }
   }
 }

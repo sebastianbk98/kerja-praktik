@@ -7,22 +7,29 @@ import 'package:rue_app/screens/home_screen.dart';
 import 'package:rue_app/screens/work/work_screen.dart';
 import 'package:rue_app/widget.dart';
 
-class AddWorkSummaryPage extends StatefulWidget {
-  const AddWorkSummaryPage({super.key, required this.work, required this.file});
+class EditWorkSummaryPage extends StatefulWidget {
+  const EditWorkSummaryPage(
+      {super.key,
+      required this.work,
+      required this.file,
+      required this.truckMap,
+      required this.employeeMap});
   final Work work;
+  final Map<String, String> truckMap;
+  final Map<String, dynamic> employeeMap;
   final Uint8List? file;
   @override
-  State<AddWorkSummaryPage> createState() => _AddWorkSummaryPageState();
+  State<EditWorkSummaryPage> createState() => _EditWorkSummaryPageState();
 }
 
-class _AddWorkSummaryPageState extends State<AddWorkSummaryPage> {
+class _EditWorkSummaryPageState extends State<EditWorkSummaryPage> {
   bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     Work work = widget.work;
     List<String> drivers = [];
-    for (List<String> driver in work.employees.values) {
+    for (List<dynamic> driver in work.employees.values) {
       drivers.add(driver[0]);
     }
     List<String> trucks = [];
@@ -199,8 +206,12 @@ class _AddWorkSummaryPageState extends State<AddWorkSummaryPage> {
                                       setState(() {
                                         _isLoading = true;
                                       });
-                                      createWork(work: work, file: widget.file)
-                                          .then((value) {
+                                      editOngoingWork(
+                                        work: work,
+                                        file: widget.file,
+                                        employeeMap: widget.employeeMap,
+                                        truckMap: widget.truckMap,
+                                      ).then((value) {
                                         if (value?.compareTo('success') == 0) {
                                           Navigator.pushAndRemoveUntil(
                                               context,
@@ -225,7 +236,7 @@ class _AddWorkSummaryPageState extends State<AddWorkSummaryPage> {
                                     }
                                   });
                                 },
-                                child: const Text("Add New Work"),
+                                child: const Text("Edit Work"),
                               ),
                             ],
                           )

@@ -22,13 +22,13 @@ class StorageServices {
   }
 
   Future<Map<String, dynamic>> uploadFiles(List<String> references,
-      List<Uint8List> files, String contentType) async {
+      List<Uint8List?> files, String contentType) async {
     List<String> fileUrl = [];
     try {
       for (var i = 0; i < references.length; i++) {
         Reference ref = storage.ref().child(references[i]);
         final metadata = SettableMetadata(contentType: contentType);
-        await ref.putData(files[i], metadata);
+        await ref.putData(files[i]!, metadata);
         fileUrl.add(await ref.getDownloadURL());
       }
     } catch (e) {
@@ -38,5 +38,21 @@ class StorageServices {
       "message": "success",
       "object": fileUrl,
     };
+  }
+
+  Future<void> deleteData(String url) async {
+    try {
+      final ref = storage.refFromURL(url);
+
+      await ref.delete();
+    } on Exception catch (_) {
+      return;
+    }
+  }
+
+  Future<Uint8List> getImageByte(String url) async {
+    final ref = storage.refFromURL(url);
+    Uint8List byte = await ref.getData(100000000) ?? Uint8List(0);
+    return byte;
   }
 }

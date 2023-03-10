@@ -2,15 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Work {
   String id;
-  final String client;
-  final String numberDN;
-  final String destination;
-  final String receivingCompany;
-  final String weight;
-  final String shippingDate;
-  final String transportationType;
-  final Map<String, dynamic> employees;
-  final Map<String, String> trucks;
+  String client;
+  String numberDN;
+  String destination;
+  String receivingCompany;
+  String weight;
+  String shippingDate;
+  String deliveryDate;
+  String transportationType;
+  Map<String, dynamic> employees;
+  Map<String, String> trucks;
   String status;
   String documentReference;
   List<String> reportReference;
@@ -23,6 +24,7 @@ class Work {
     required this.receivingCompany,
     required this.weight,
     required this.shippingDate,
+    this.deliveryDate = "",
     required this.transportationType,
     required this.employees,
     required this.trucks,
@@ -46,6 +48,7 @@ class Work {
       receivingCompany: data?["receivingCompany"],
       weight: data?["weight"],
       shippingDate: data?["shippingDate"],
+      deliveryDate: data?["deliveryDate"] ?? "",
       transportationType: data?["transportationType"],
       employees: employees,
       trucks: trucks,
@@ -64,6 +67,7 @@ class Work {
       "receivingCompany": receivingCompany,
       "weight": weight,
       "shippingDate": shippingDate,
+      "deliveryDate": deliveryDate,
       "transportationType": transportationType,
       "employees": employees,
       "trucks": trucks,

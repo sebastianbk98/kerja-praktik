@@ -7,7 +7,7 @@ class Employee {
   final String position;
   final String email;
   final String status;
-  bool checkInStatus;
+  String checkInStatus;
 
   Employee({
     required this.uid,
@@ -16,7 +16,7 @@ class Employee {
     required this.position,
     required this.email,
     required this.status,
-    this.checkInStatus = false,
+    this.checkInStatus = "",
   });
   factory Employee.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,

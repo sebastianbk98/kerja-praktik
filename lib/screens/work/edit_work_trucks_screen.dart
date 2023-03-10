@@ -1,28 +1,34 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:rue_app/config/theme.dart';
-import 'package:rue_app/controllers/employee_controller.dart';
-import 'package:rue_app/models/employee_model.dart';
+import 'package:rue_app/controllers/truck_controller.dart';
+import 'package:rue_app/models/truck_model.dart';
 import 'package:rue_app/models/work_model.dart';
-import 'package:rue_app/screens/work/add_work_summary_screen.dart';
+import 'package:rue_app/screens/work/edit_work_driver_screen.dart';
 import 'package:rue_app/widget.dart';
 
-class AddWorkDriversPage extends StatefulWidget {
-  const AddWorkDriversPage({super.key, required this.work, required this.file});
+class EditWorkTrucksPage extends StatefulWidget {
+  const EditWorkTrucksPage({super.key, required this.work, required this.file});
   final Work work;
   final Uint8List? file;
 
   @override
-  State<AddWorkDriversPage> createState() => _AddWorkDriversPageState();
+  State<EditWorkTrucksPage> createState() => _EditWorkTrucksPageState();
 }
 
-class _AddWorkDriversPageState extends State<AddWorkDriversPage> {
+class _EditWorkTrucksPageState extends State<EditWorkTrucksPage> {
+  Map<String, String> oldTruckMap = {};
+  Map<String, String> truckMap = {};
   @override
   Widget build(BuildContext context) {
     Work work = widget.work;
+
+    for (String id in work.trucks.keys) {
+      oldTruckMap[id] = work.trucks[id] ?? "";
+    }
     return Title(
       color: Colors.blue,
-      title: "Choose Driver(s)",
+      title: "Choose Truck(s)",
       child: Container(
         constraints: const BoxConstraints.expand(),
         decoration: const BoxDecoration(
@@ -33,39 +39,47 @@ class _AddWorkDriversPageState extends State<AddWorkDriversPage> {
         child: Scaffold(
           backgroundColor: Colors.white.withOpacity(0.9),
           appBar: AppBar(
-            title: const Text("Select Drivers"),
+            title: const Text("Select Trucks"),
           ),
           body: SafeArea(
             child: FutureBuilder(
-              future: getAllEmployeesForDriver(),
+              future: getAllAvailableTruck(),
               builder: ((context, snapshot) {
                 if (snapshot.hasData) {
                   Map<String, dynamic>? data = snapshot.data;
                   if (data?["message"] == "success") {
-                    List<Employee> employees = data?["object"];
+                    List<Truck> trucks = data?["object"];
+
+                    for (String id in work.trucks.keys) {
+                      truckMap[id] = work.trucks[id] ?? "";
+                    }
+                    for (Truck truck in trucks) {
+                      truckMap[truck.id] =
+                          "${truck.name}_${truck.licenseNumber}";
+                    }
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Text(
-                                "Need ${work.trucks.length - work.employees.length} driver(s)"),
+                            Text("${work.trucks.length} selected"),
                             ElevatedButton(
-                              onPressed: work.employees.isEmpty
+                              onPressed: work.trucks.isEmpty
                                   ? null
                                   : () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) =>
-                                              AddWorkSummaryPage(
+                                              EditWorkDriversPage(
+                                            truckMap: oldTruckMap,
                                             work: work,
                                             file: widget.file,
                                           ),
                                         ),
                                       );
                                     },
-                              child: const Text("Summary"),
+                              child: const Text("Select Drivers"),
                             ),
                           ],
                         ),
@@ -76,37 +90,24 @@ class _AddWorkDriversPageState extends State<AddWorkDriversPage> {
                               thickness: adaptiveConv(context, 3),
                               indent: adaptiveConv(context, 5),
                             ),
-                            itemCount: employees.length,
+                            itemCount: truckMap.length,
                             itemBuilder: (BuildContext context, int index) {
-                              Employee employee = employees[index];
+                              String id = truckMap.keys.toList()[index];
                               return ListTile(
                                 leading: const Icon(Icons.fire_truck),
-                                title: Text(employee.fullName),
-                                subtitle: Text(employee.position),
-                                trailing: Text(employee.status),
-                                selected:
-                                    work.employees.containsKey(employee.uid),
+                                title: Text(truckMap[id]?.split("_")[0] ?? ""),
+                                subtitle:
+                                    Text(truckMap[id]?.split("_")[1] ?? ""),
+                                selected: work.trucks.containsKey(id),
                                 selectedTileColor: Colors.blue,
                                 onTap: (() {
-                                  if (work.employees
-                                      .containsKey(employee.uid)) {
-                                    setState(() {
-                                      work.employees.remove(employee.uid);
-                                    });
-                                  } else {
-                                    if (work.employees.length <
-                                        work.trucks.length) {
-                                      setState(() {
-                                        work.employees[employee.uid] = [
-                                          employee.fullName,
-                                          "REQUESTING"
-                                        ];
-                                      });
+                                  setState(() {
+                                    if (work.trucks.containsKey(id)) {
+                                      work.trucks.remove(id);
                                     } else {
-                                      showAlertDialog(context, "Driver(s)",
-                                          "Enough Driver(s)");
+                                      work.trucks[id] = truckMap[id] ?? "";
                                     }
-                                  }
+                                  });
                                 }),
                               );
                             },

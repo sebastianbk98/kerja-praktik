@@ -64,6 +64,8 @@ Future<Map<String, dynamic>> getAllTruckModel() async {
     List<Truck> list = [];
     final ref = await db
         .collection("trucks")
+        .orderBy("status")
+        .orderBy("name")
         .withConverter(
           fromFirestore: Truck.fromFirestore,
           toFirestore: (Truck truckModel, _) => truckModel.toFirestore(),

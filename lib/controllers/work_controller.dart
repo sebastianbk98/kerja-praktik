@@ -44,9 +44,97 @@ Future<String?> createWork({
   }
 }
 
-Future<String?> editWork({required Work work}) async {
+Future<String?> editOngoingWork({
+  required Work work,
+  required Map<String, String> truckMap,
+  required Map<String, dynamic> employeeMap,
+  required Uint8List? file,
+}) async {
   try {
+    for (String id in truckMap.keys) {
+      String result = await updateTruckStatus(id: id, status: truckAvailable);
+      if (result != "success") return result;
+    }
+    for (String uid in employeeMap.keys) {
+      String result =
+          await updateEmployeeStatus(uid: uid, status: employeeAvailable);
+      if (result != "success") return result;
+    }
+    if (file != null) {
+      var result = await getWorkByID(id: work.id);
+      if (result["message"] != "success") {
+        return result["message"];
+      }
+      Work oldWork = result["object"];
+      await StorageServices().deleteData(oldWork.documentReference);
+      String fileReference = "${work.id}/${work.documentReference}";
+      var upload = await StorageServices()
+          .uploadFile(fileReference, file, "application/pdf");
+      if (upload["message"] != "success") {
+        return upload["message"];
+      }
+      work.documentReference = upload["object"];
+    }
+    for (String key in work.employees.keys) {
+      String result =
+          await updateEmployeeStatus(uid: key, status: employeeRequested);
+      if (result != "success") return result;
+    }
+    for (String key in work.trucks.keys) {
+      String result = await updateTruckStatus(id: key, status: truckWorking);
+      if (result != "success") return result;
+    }
+    work.status = workRequestEmployee;
     await db.collection("works").doc(work.id).set(work.toFirestore());
+    return "success";
+  } on Exception catch (e) {
+    return e.toString();
+  }
+}
+
+Future<String?> editWork({
+  required Work work,
+  required Uint8List? file,
+}) async {
+  try {
+    if (file != null) {
+      var result = await getWorkByID(id: work.id);
+      if (result["message"] != "success") {
+        return result["message"];
+      }
+      Work oldWork = result["object"];
+      await StorageServices().deleteData(oldWork.documentReference);
+      String fileReference = "${work.id}/${work.documentReference}";
+      var upload = await StorageServices()
+          .uploadFile(fileReference, file, "application/pdf");
+      if (upload["message"] != "success") {
+        return upload["message"];
+      }
+      work.documentReference = upload["object"];
+    }
+    await db.collection("works").doc(work.id).set(work.toFirestore());
+    return "success";
+  } on Exception catch (e) {
+    return e.toString();
+  }
+}
+
+Future<String> deleteWorkByID({required String id}) async {
+  try {
+    final ref = await db
+        .collection("works")
+        .doc(id)
+        .withConverter(
+          fromFirestore: Work.fromFirestore,
+          toFirestore: (Work work, _) => work.toFirestore(),
+        )
+        .get();
+    Work work = ref.data()!;
+    await StorageServices().deleteData(work.documentReference);
+    for (String reference in work.reportReference) {
+      await StorageServices().deleteData(reference);
+    }
+    await db.collection("works").doc(id).delete();
     return "success";
   } on Exception catch (e) {
     return e.toString();
@@ -69,6 +157,29 @@ Future<Map<String, dynamic>> getWorkByID({required String id}) async {
   }
 }
 
+Future<Map<String, dynamic>> getAllWorksWithDate(
+    String firstDate, String lastDate) async {
+  try {
+    List<Work> list = [];
+    final ref = await db
+        .collection("works")
+        .where("shippingDate",
+            isGreaterThanOrEqualTo: firstDate, isLessThanOrEqualTo: lastDate)
+        .orderBy("shippingDate", descending: true)
+        .withConverter(
+          fromFirestore: Work.fromFirestore,
+          toFirestore: (Work work, _) => work.toFirestore(),
+        )
+        .get();
+    for (var element in ref.docs) {
+      list.add(element.data());
+    }
+    return {"message": "success", "object": list};
+  } on Exception catch (e) {
+    return {"message": e.toString()};
+  }
+}
+
 Future<Map<String, dynamic>> getAllOngoingWorks() async {
   try {
     List<Work> list = [];
@@ -79,6 +190,7 @@ Future<Map<String, dynamic>> getAllOngoingWorks() async {
           workInProgress,
           workDoneConfirmation,
         ])
+        .orderBy("shippingDate", descending: true)
         .withConverter(
           fromFirestore: Work.fromFirestore,
           toFirestore: (Work work, _) => work.toFirestore(),
@@ -98,11 +210,13 @@ Future<Map<String, dynamic>> getAllWorksHistory() async {
     List<Work> list = [];
     final ref = await db
         .collection("works")
-        .where("status", whereNotIn: [
-          workRequestEmployee,
-          workInProgress,
-          workDoneConfirmation,
+        .where("status", whereIn: [
+          workCancel,
+          workDone,
+          workEmployeeReject,
+          workFailed,
         ])
+        .orderBy("shippingDate", descending: true)
         .withConverter(
           fromFirestore: Work.fromFirestore,
           toFirestore: (Work work, _) => work.toFirestore(),
@@ -176,6 +290,9 @@ Future<String> updateWorkStatus({
       if (trucksUpdate != "success") return trucksUpdate;
     }
     work.status = status;
+    if (work.deliveryDate.isEmpty && status == workDone) {
+      work.deliveryDate = DateTime.now().toString().split(" ")[0];
+    }
     await db.collection("works").doc(id).set(work.toFirestore());
     return "success";
   } on Exception catch (e) {
@@ -222,7 +339,7 @@ Future<String> updateAllTrucksAvailable({required String id}) async {
 Future<String> uploadReport({
   required Work work,
   required List<String> references,
-  required List<Uint8List> files,
+  required List<Uint8List?> files,
 }) async {
   try {
     var upload =
@@ -230,6 +347,7 @@ Future<String> uploadReport({
     if (upload["message"] != "success") return upload["message"];
     work.reportReference = upload["object"];
     work.status = workDoneConfirmation;
+    work.deliveryDate = DateTime.now().toString().split(" ")[0];
     await db.collection("works").doc(work.id).set(work.toFirestore());
     return "success";
   } on Exception catch (e) {

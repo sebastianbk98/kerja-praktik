@@ -5,12 +5,15 @@ var db = FirebaseFirestore.instance;
 
 Future<String> checkInAttendance(String uid, String fullName) async {
   try {
-    DateTime now = DateTime.now();
+    List<String> now = DateTime.now().toString().split(" ");
+    String date = now[0];
+    String time = now[1];
     AttendanceModel checkIn = AttendanceModel(
-      uid: uid,
-      fullName: fullName,
-      checkIn: now,
-    );
+        uid: uid,
+        fullName: fullName,
+        date: date,
+        checkInTime: time,
+        checkOutTime: "");
     await db.collection("attendances").add(checkIn.toFirestore());
     return "success";
   } on Exception catch (e) {
@@ -18,17 +21,27 @@ Future<String> checkInAttendance(String uid, String fullName) async {
   }
 }
 
+Future<String> checkOutAttendance(String id) async {
+  try {
+    String now = DateTime.now().toString().split(" ")[1];
+    await db
+        .collection("attendances")
+        .doc(id)
+        .update({"checkOutTime": now.toString()});
+    return "success";
+  } on Exception catch (e) {
+    return e.toString();
+  }
+}
+
 Future<Map<String, dynamic>> checkTodayAttendanceByUid(String uid) async {
-  DateTime now = DateTime.now();
-  DateTime start = DateTime(now.year, now.month, now.day, 0, 0);
-  DateTime end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+  String now = DateTime.now().toString().split(" ")[0];
   try {
     var ref = await db
         .collection("attendances")
         .where("uid", isEqualTo: uid)
-        .where('checkIn',
-            isGreaterThanOrEqualTo: start.toString(),
-            isLessThanOrEqualTo: end.toString())
+        .where('date', isEqualTo: now)
+        .where("checkOutTime", isEqualTo: "")
         .withConverter(
           fromFirestore: AttendanceModel.fromFirestore,
           toFirestore: (AttendanceModel attendanceModel, _) =>
@@ -38,12 +51,12 @@ Future<Map<String, dynamic>> checkTodayAttendanceByUid(String uid) async {
     if (ref.docs.isEmpty) {
       return {
         "message": "success",
-        "object": false,
+        "object": "",
       };
     } else {
       return {
         "message": "success",
-        "object": true,
+        "object": ref.docs.first.id,
       };
     }
   } on Exception catch (e) {
@@ -63,10 +76,35 @@ Future<Map<DateTime, List<AttendanceModel>>> getAttendanceRecordByUid(
       )
       .get();
   Map<DateTime, List<AttendanceModel>> map = {};
+
   for (var element in ref.docs) {
     var data = element.data();
-    map[data.checkIn] = [data];
+    List<AttendanceModel> temp = map[DateTime.parse(data.date)] ?? [];
+    temp.add(data);
+    map[DateTime.parse(data.date)] = temp;
   }
 
   return map;
+}
+
+Future<List<AttendanceModel>> getAttendanceRecordsWithDate(
+    String firstDate, String lastDate) async {
+  final ref = await db
+      .collection("attendances")
+      .where("date",
+          isGreaterThanOrEqualTo: firstDate, isLessThanOrEqualTo: lastDate)
+      .withConverter(
+        fromFirestore: AttendanceModel.fromFirestore,
+        toFirestore: (AttendanceModel attendanceModel, _) =>
+            attendanceModel.toFirestore(),
+      )
+      .get();
+
+  List<AttendanceModel> list = [];
+  for (var element in ref.docs) {
+    var data = element.data();
+    list.add(data);
+  }
+
+  return list;
 }

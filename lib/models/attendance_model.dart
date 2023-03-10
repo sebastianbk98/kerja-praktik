@@ -1,25 +1,31 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
 
 class AttendanceModel {
   final String uid;
   final String fullName;
-  final DateTime checkIn;
+  final String date;
+  final String checkInTime;
+  final String checkOutTime;
 
   AttendanceModel({
     required this.uid,
     required this.fullName,
-    required this.checkIn,
+    required this.date,
+    required this.checkInTime,
+    required this.checkOutTime,
   });
   factory AttendanceModel.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
     SnapshotOptions? options,
   ) {
     final data = snapshot.data();
+
     return AttendanceModel(
       uid: data?["uid"],
       fullName: data?["fullName"],
-      checkIn: DateTime.parse(data?["checkIn"]),
+      date: data?["date"],
+      checkInTime: data?["checkInTime"],
+      checkOutTime: data?["checkOutTime"],
     );
   }
 
@@ -27,12 +33,14 @@ class AttendanceModel {
     return {
       "uid": uid,
       "fullName": fullName,
-      "checkIn": checkIn.toString(),
+      "date": date,
+      "checkInTime": checkInTime,
+      "checkOutTime": checkOutTime,
     };
   }
 
   @override
   String toString() {
-    return "$fullName at ${DateFormat.Hms().format(checkIn)}";
+    return "$fullName\nCheck In at $checkInTime${checkOutTime.isEmpty ? "" : "\nCheck Out at $checkOutTime"}";
   }
 }
