@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBxYBl3DfX1etvrtF_AsNBs-Jz5610qaWk',
-    appId: '1:946427230218:web:3bfee09d877f5c9aed87f3',
-    messagingSenderId: '946427230218',
-    projectId: 'rianinda-utama-ekspress',
-    authDomain: 'rianinda-utama-ekspress.firebaseapp.com',
-    storageBucket: 'rianinda-utama-ekspress.appspot.com',
+    apiKey: 'XXXXXXXXXXXXXXXXXX',
+    appId: 'XXXXXXXXXXXXXXXXXX',
+    messagingSenderId: 'XXXXXXXXXXXXXXXXXX',
+    projectId: 'XXXXXXXXXXXXXXXXXX',
+    authDomain: 'XXXXXXXXXXXXXXXXXX',
+    storageBucket: 'XXXXXXXXXXXXXXXXXX',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAWsSVz1Zs6RwFuaKPnl7EJmDXozA6VZIA',
-    appId: '1:946427230218:android:74f00d13ad99cf28ed87f3',
-    messagingSenderId: '946427230218',
-    projectId: 'rianinda-utama-ekspress',
-    storageBucket: 'rianinda-utama-ekspress.appspot.com',
+    apiKey: 'XXXXXXXXXXXXXXXXXX',
+    appId: 'XXXXXXXXXXXXXXXXXX',
+    messagingSenderId: 'XXXXXXXXXXXXXXXXXX',
+    projectId: 'XXXXXXXXXXXXXXXXXX',
+    storageBucket: 'XXXXXXXXXXXXXXXXXX',
   );
 }
